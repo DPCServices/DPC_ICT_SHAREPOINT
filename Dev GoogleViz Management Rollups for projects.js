@@ -66,6 +66,7 @@ $(document).ready(function(){
 				cSite.marval=retValidStr(cRpt.Marval);
 				cSite.apEnd =  cRpt.End_x0020_Date;
 				cSite.foreEnd = cRpt.Forcast_x0020_End_x0020_Date;
+				cSite.startDate = cRpt.Start_x0020_Date;
 
 				var rTot=0;
 				for (var i=1;i<8;i++){rTot+=retValidNo(cRpt["bt_x002d_f" + i])}
@@ -161,6 +162,7 @@ function makeProjectTable(portfolio){
 	data.addColumn('number', 'Current$');
 	data.addColumn('number', 'Forecast$');
 	data.addColumn('number', 'Uncommitted$');
+	data.addColumn('date', 'Start Date');
 	data.addColumn('date', 'Approved End');
 	data.addColumn('date', 'Forecast End');
 	data.addColumn('number', 'Variance (days)');
@@ -192,6 +194,7 @@ function makeProjectTable(portfolio){
 			{v:curr, f:"$" + curr},
 			{v:fSpend, f:"$" + fSpend},
 			{v:outSt, f:"$" + (outSt)},
+			getSPDate(this.startDate),
 			getSPDate(this.apEnd),
 			getSPDate(this.foreEnd),
 			dateDiff(this.apEnd, this.foreEnd),
@@ -207,8 +210,8 @@ function makeProjectTable(portfolio){
 
 	// Create a dataview object that we can manipulate
 	var view = new google.visualization.DataView(data);
-	view.hideColumns([15,16]);
-	//view.hideColumns([7]);
+	view.hideColumns([16,17,18]);
+	//view.hideColumns([8]);
 
 	// ******************************************************
 
@@ -221,15 +224,24 @@ function makeProjectTable(portfolio){
 
 	var table = new google.visualization.Table(document.getElementById('prjList'));
 
+	// fine-tune the visualisation
+	google.visualization.events.addListener(table, 'ready', function () {
+		setColWidths()
+    });
+
+	google.visualization.events.addListener(table, 'sort', function () {
+		setColWidths()
+    });
+
 	table.draw(view, options);
 	google.visualization.events.addListener(table, 'select', function(e){
 
 		$("#prjPopUp").empty();
 		var pTitle = data.getValue(table.getSelection()[0].row, 1);
 		var pURI = data.getValue(table.getSelection()[0].row, 0);
-		var pSummary = data.getValue(table.getSelection()[0].row, 15);
-		var pMarv = data.getValue(table.getSelection()[0].row, 16);
-		var pReports = data.getValue(table.getSelection()[0].row, 17);
+		var pSummary = data.getValue(table.getSelection()[0].row, 16);
+		var pMarv = data.getValue(table.getSelection()[0].row, 17);
+		var pReports = data.getValue(table.getSelection()[0].row, 18);
 		prjSummary = $("<div>")
 			.html(pSummary)
 			.attr({"id":"prjSummary"})
@@ -255,9 +267,25 @@ function makeProjectTable(portfolio){
 		//window.open(data.getValue(table.getSelection()[0].row, 0),data.getValue(table.getSelection()[0].row, 0));
 	});
 
+
+
+
+
 	// *******************************************************
 
-
+	function setColWidths(){
+		// Set column width minimums
+        var colWidths = [
+        	{heading:"Stage", minWidth:"8em"},
+        	{heading:"Start Date", minWidth:"7em"},
+        	{heading:"Approved End", minWidth:"7em"},
+        	{heading:"Forecast End", minWidth:"7em"},
+        	{heading:"Status", minWidth:"5em"}
+        	];
+        $(colWidths).each(function(){
+        	$("#prjList .google-visualization-table-th:contains('" + this.heading + "')").css('min-width', this.minWidth);
+        });
+	}
 }
 
 function retValidNo(field){
