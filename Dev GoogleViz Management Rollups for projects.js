@@ -22,6 +22,7 @@
 <script>
 var siteList = new Array();
 var portVal={proj:0,current:0,baseline:0};
+var filters = new Object();
 var init = true;
 
 // LOAD THE GOOGLE VIZ TABLE PACKAGE
@@ -40,11 +41,9 @@ $(document).ready(function(){
 
 		// Keep this simple --> First Pass
 		$(siteData).each(function(){
-			if (this.Hide == false) {
-				var hrRpt = this.Highlight_x0020_Report
-				var prj = new Project(hrRpt.Description, hrRpt.Description, hrRpt.Url.match(/.+Projects\/[^\/]+/)[0], this.GUID);
-				siteList.push(prj);
-			}
+			var hrRpt = this.Highlight_x0020_Report
+			var prj = new Project(hrRpt.Description, hrRpt.Description, hrRpt.Url.match(/.+Projects\/[^\/]+/)[0], this.GUID, this.Hide);
+			siteList.push(prj);
 		});
 
 		// second Pass
@@ -112,7 +111,8 @@ $(document).ready(function(){
 					return 1
 				return 0 //default return value (no sorting)
 				});
-			makeProjectTable(siteList);
+			filters = getFilters(siteList);
+			makeProjectTable(siteList, filters);
 			init=false;
 		}
 	});
@@ -146,7 +146,7 @@ function updatePeople(ptr){
 	}
 }
 
-function makeProjectTable(portfolio){
+function makeProjectTable(portfolio, filters){
 	// Now, build the table headings *************************
 
 	var data = new google.visualization.DataTable();
@@ -177,31 +177,33 @@ function makeProjectTable(portfolio){
 
 	var tableData = [];
 	$(portfolio).each(function(){
-		var base = parseInt(this.baseline);
-		var curr = parseInt(this.current);
-		var fSpend = parseInt(this.fSpend);
-		var outSt = parseInt(this.fSpend - this.current);
-		tableData.push([
-			{v:this.url, f:this.marval},
-			this.title,
-			this.pm,
-			this.sponsor,
-			this.health,
-			this.stage,
-			{v:this.pct, f:this.pct + "%"},
-			this.period.toString(),
-			{v:base, f:"$" + base},
-			{v:curr, f:"$" + curr},
-			{v:fSpend, f:"$" + fSpend},
-			{v:outSt, f:"$" + (outSt)},
-			getSPDate(this.startDate),
-			getSPDate(this.apEnd),
-			getSPDate(this.foreEnd),
-			dateDiff(this.apEnd, this.foreEnd),
-			this.summary,
-			this.marvURI,
-			this.rptURI
-		]);
+		if (!this.hidden){
+			var base = parseInt(this.baseline);
+			var curr = parseInt(this.current);
+			var fSpend = parseInt(this.fSpend);
+			var outSt = parseInt(this.fSpend - this.current);
+			tableData.push([
+				{v:this.url, f:this.marval},
+				this.title,
+				this.pm,
+				this.sponsor,
+				this.health,
+				this.stage,
+				{v:this.pct, f:this.pct + "%"},
+				this.period.toString(),
+				{v:base, f:"$" + base},
+				{v:curr, f:"$" + curr},
+				{v:fSpend, f:"$" + fSpend},
+				{v:outSt, f:"$" + (outSt)},
+				getSPDate(this.startDate),
+				getSPDate(this.apEnd),
+				getSPDate(this.foreEnd),
+				dateDiff(this.apEnd, this.foreEnd),
+				this.summary,
+				this.marvURI,
+				this.rptURI
+			]);
+		}
 	});
 
 
@@ -308,7 +310,7 @@ function toCurrency(a){
 	return a.toFixed(2).toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
 }
 
-function Project(t,d,u,i){
+function Project(t,d,u,i,h){
 	this.title = retValidStr(t);
 	this.desc = retValidStr(d);
 	this.url = retValidStr(u);
@@ -321,6 +323,7 @@ function Project(t,d,u,i){
 	this.current = 0;
 	this.fSpend = 0;
 	this.period = 0;
+	this.hidden = h;
 }
 
 function getSPDate(field){
@@ -368,5 +371,22 @@ function doHistory(uri){
 				
 			});
 		});
+}
+
+function getFilters(siteList){
+	var filters = new Object();
+	filters.stages = new Array();
+	filters.status = new Array();
+	$(siteList).each(function(){
+		if ($.inArray(this.stage, filters.stages)==-1){
+			filters.stages.push(this.stage);
+		}
+		if ($.inArray(this.health, filters.status)==-1){
+			filters.status.push(this.health);
+		}
+	});
+	filters.stages.sort();
+	filters.status.sort();
+	return filters;
 }
 </script>
