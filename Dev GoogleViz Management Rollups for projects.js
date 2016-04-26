@@ -159,8 +159,7 @@ $(document).ready(function(){
 			.text("Status")
 			.append("<br />");
 
-		$(filters.status).each(function(){
-			var statusLable = this.toString();
+		$(filters.status).each(function(i, statusLable){
 			var statusCB = $("<input />")
 
 			if ($.inArray(statusLable, selFilters.status)!=-1){
@@ -186,6 +185,24 @@ $(document).ready(function(){
 		$("#prjFilter").empty();
 		$("#prjFilter").append(stageSelectDiv);
 		$("#prjFilter").append(statusSelectDiv);
+
+		$("#prjFilter").append("<br clear='all'>");
+		$("#prjFilter").append($("<button>")
+			.attr({"type":"button", "id":"btnApplyFilter"})
+			.text("Apply Filter")
+			.on("click", function(){
+				selFilters.stages = [];
+				$("#prjFilter input:checked[name='selStage']").each(function(){
+					selFilters.stages.push($(this).val());
+					});
+				selFilters.status = [];
+				$("#prjFilter input:checked[name='selStatus']").each(function(){
+					selFilters.status.push($(this).val());
+					});
+				makeProjectTable(siteList, selFilters);
+				$("#prjFilter").dialog("close");
+				})
+			);
 
 		$("#prjFilter").dialog({
 			title:"Apply Filter",
@@ -226,7 +243,7 @@ function updatePeople(ptr){
 	}
 }
 
-function makeProjectTable(portfolio, filters){
+function makeProjectTable(portfolio, currFilterSet){
 	// Now, build the table headings *************************
 
 	var data = new google.visualization.DataTable();
@@ -257,7 +274,7 @@ function makeProjectTable(portfolio, filters){
 
 	var tableData = [];
 	$(portfolio).each(function(){
-		if (!this.hidden){
+		if (!this.hidden && $.inArray(this.stage, currFilterSet.stages) !=-1 && $.inArray(this.health, currFilterSet.status) !=-1){
 			var base = parseInt(this.baseline);
 			var curr = parseInt(this.current);
 			var fSpend = parseInt(this.fSpend);
