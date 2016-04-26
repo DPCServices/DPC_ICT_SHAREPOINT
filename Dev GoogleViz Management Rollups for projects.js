@@ -5,6 +5,8 @@
 </div>
 <div id="prjPopUp" style="display:none;">
 </div>
+<div id="prjFilter" style="display:none;">
+</div>
 
 <!-- LOAD JQUERY -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
@@ -23,6 +25,7 @@
 var siteList = new Array();
 var portVal={proj:0,current:0,baseline:0};
 var filters = new Object();
+var selFilters = new Object();
 var init = true;
 
 // LOAD THE GOOGLE VIZ TABLE PACKAGE
@@ -112,9 +115,103 @@ $(document).ready(function(){
 				return 0 //default return value (no sorting)
 				});
 			filters = getFilters(siteList);
-			makeProjectTable(siteList, filters);
+			selFilters.stages = initStageFilters();
+			selFilters.status = filters.status;
+			makeProjectTable(siteList, selFilters);
 			init=false;
 		}
+	});
+
+	$("#btnFilter").on("click", function(){
+		var stageSelectDiv = $("<div>")
+			.css({"float":"left",
+				"border":"solid 1px #eee",
+				"padding":"0px 10px"
+				})
+			.text("Stages")
+			.append("<br />");
+
+		$(filters.stages).each(function(i, stageLable){
+			var stageCB = $("<input />");
+			if ($.inArray(stageLable, selFilters.stages)!=-1){
+				stageCB.attr({"value":stageLable, "checked":"checked", "name":"selStage", "type":"checkbox"});
+			} else {
+				stageCB.attr({"value":stageLable, "name":"selStage", "type":"checkbox"});
+			}
+			$(stageSelectDiv).append(stageCB)
+				.append($("<span>")
+				.text(function(){
+					if (stageLable == ""){
+						return "[Blank]";
+					} else {
+						return stageLable;
+					}
+				}()))
+				.append("<br />");
+			
+		});
+
+		var statusSelectDiv = $("<div>")
+			.css({"float":"right",
+				"border":"solid 1px #eee",
+				"padding":"0px 10px"
+				})
+			.text("Status")
+			.append("<br />");
+
+		$(filters.status).each(function(i, statusLable){
+			var statusCB = $("<input />")
+
+			if ($.inArray(statusLable, selFilters.status)!=-1){
+				statusCB.attr({"value":statusLable, "checked":"checked", "name":"selStatus", "type":"checkbox"});
+			} else {
+				statusCB.attr({"value":statusLable, "name":"selStatus", "type":"checkbox"});
+			}
+
+			$(statusSelectDiv).append(statusCB)
+				.append($("<span>")
+				.text(function(){
+					if (statusLable == ""){
+						return "[Blank]";
+					} else {
+						return statusLable;
+					}
+				}()))
+				.append("<br />");
+			
+		});
+
+
+		$("#prjFilter").empty();
+		$("#prjFilter").append(stageSelectDiv);
+		$("#prjFilter").append(statusSelectDiv);
+
+		$("#prjFilter").append("<br clear='all'>");
+		$("#prjFilter").append($("<button>")
+			.attr({"type":"button", "id":"btnApplyFilter"})
+			.text("Apply Filter")
+			.on("click", function(){
+				selFilters.stages = [];
+				$("#prjFilter input:checked[name='selStage']").each(function(){
+					selFilters.stages.push($(this).val());
+					});
+				selFilters.status = [];
+				$("#prjFilter input:checked[name='selStatus']").each(function(){
+					selFilters.status.push($(this).val());
+					});
+				makeProjectTable(siteList, selFilters);
+				$("#prjFilter").dialog("close");
+				})
+			);
+
+		$("#prjFilter").dialog({
+			title:"Apply Filter",
+			modal:true,
+			width:330,
+			height:"auto"
+		});
+
+
 	});
 
 });
@@ -146,7 +243,7 @@ function updatePeople(ptr){
 	}
 }
 
-function makeProjectTable(portfolio, filters){
+function makeProjectTable(portfolio, currFilterSet){
 	// Now, build the table headings *************************
 
 	var data = new google.visualization.DataTable();
@@ -177,7 +274,7 @@ function makeProjectTable(portfolio, filters){
 
 	var tableData = [];
 	$(portfolio).each(function(){
-		if (!this.hidden){
+		if (!this.hidden && $.inArray(this.stage, currFilterSet.stages) !=-1 && $.inArray(this.health, currFilterSet.status) !=-1){
 			var base = parseInt(this.baseline);
 			var curr = parseInt(this.current);
 			var fSpend = parseInt(this.fSpend);
@@ -388,5 +485,16 @@ function getFilters(siteList){
 	filters.stages.sort();
 	filters.status.sort();
 	return filters;
+}
+
+function initStageFilters(){
+	var stageFilters = [
+		"1. Start-up",
+		"2. Planning",
+		"3. Implementation",
+		"4. Close"
+	];
+
+	return stageFilters;
 }
 </script>
