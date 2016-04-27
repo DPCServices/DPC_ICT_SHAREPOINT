@@ -40,16 +40,16 @@ $(document).ready(function(){
 		url:prRootSiteURI,
 		headers:{"Accept": "application/json;odata=verbose"}
 	}).done(function(data){
-		var siteData = data.d.results;
+		var siteData = data.d.results; //All projects from the master projects list
 
-		// Keep this simple --> First Pass
+		// Keep this simple --> First Pass, build the siteList array of Project Objects
 		$(siteData).each(function(){
-			var hrRpt = this.Highlight_x0020_Report
+			var hrRpt = this.Highlight_x0020_Report||{Description:"TBA",Url:"/Projects/TBA/TBA"}; // fix for crash when a list entry is first created but no site exists
 			var prj = new Project(hrRpt.Description, hrRpt.Description, hrRpt.Url.match(/.+Projects\/[^\/]+/)[0], this.GUID, this.Hide);
 			siteList.push(prj);
 		});
 
-		// second Pass
+		// second Pass - iterate through the siteList array and lookup the highlight reports
 		$(siteList).each(function(ptr){
 			var hiURL = this.url + "/_api/Web/Lists/GetByTitle('Highlight Reports')/items"
 			$.ajax({
@@ -190,6 +190,7 @@ $(document).ready(function(){
 		$("#prjFilter").append($("<button>")
 			.attr({"type":"button", "id":"btnApplyFilter"})
 			.text("Apply Filter")
+			.css({"font-size":".8em","display":"inline-block","float":"left"})
 			.on("click", function(){
 				selFilters.stages = [];
 				$("#prjFilter input:checked[name='selStage']").each(function(){
@@ -201,6 +202,17 @@ $(document).ready(function(){
 					});
 				makeProjectTable(siteList, selFilters);
 				$("#prjFilter").dialog("close");
+				})
+			);
+		$("#prjFilter").append($("<a>")
+				.text("Revert to default view")
+				.attr({"href":"#"})
+				.css({"font-size":".8em","display":"inline-block","float":"right","margin-top":"10px"})
+				.on("click",function(){
+					selFilters.stages = initStageFilters();
+					selFilters.status = filters.status;
+					makeProjectTable(siteList, selFilters);
+					$("#prjFilter").dialog("close");
 				})
 			);
 
